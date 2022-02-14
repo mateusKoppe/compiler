@@ -21,8 +21,6 @@ const LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
 
 const NUMBERS = ['0', '1', '2', '3', '4', '5', '7', '8', '9'];
 
-export const sum = (a: number, b: number) => a + b;
-
 export const TOKENS: { [name: string]: Token } = {
   IF: {
     type: TOKEN_TYPE.KEYWORD,
@@ -41,4 +39,13 @@ export const TOKENS: { [name: string]: Token } = {
       }
     }
   }
+}
+
+export const keywordToGrammar = (keyword: string): Grammar => {
+  type reduceProp = [Grammar, number]
+
+  const grammarReduce = ([state = {}, index = 0]: reduceProp, letter: string): reduceProp => [{ ...state, [index]: { productions: { [letter]: index + 1 }, isFinal: false } }, index + 1]
+  const [grammar, lastIndex] = keyword.split("").reduce(grammarReduce, [{}, 0] as reduceProp);
+
+  return { ...grammar, [lastIndex]: { productions: {}, isFinal: true } };
 }

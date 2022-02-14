@@ -1,5 +1,18 @@
-import { sum } from "../src/tokens";
+import { keywordToGrammar } from "../src/tokens";
 
 test("Check tokens", () => {
-  expect(sum(1, 2)).toBe(3)
+  expect(keywordToGrammar("if")).toEqual({
+    0: {
+      productions: {i: 1},
+      isFinal: false
+    },
+    1: {
+      productions: {f: 2},
+      isFinal: false
+    },
+    2: {
+      productions: {},
+      isFinal: true
+    }, 
+  })
 })
