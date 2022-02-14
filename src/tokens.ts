@@ -1,0 +1,44 @@
+export interface Grammar {
+  [state: string]: {
+    productions: {
+      [letter: string]: string
+    },
+    isFinal: boolean
+  }
+}
+
+enum TOKEN_TYPE { GRAMMAR, KEYWORD }
+export interface Token {
+  type: TOKEN_TYPE,
+  definition: String | Grammar
+}
+
+const LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
+  'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+  'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+  'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+  'Y', 'Z'];
+
+const NUMBERS = ['0', '1', '2', '3', '4', '5', '7', '8', '9'];
+
+export const sum = (a: number, b: number) => a + b;
+
+export const TOKENS: { [name: string]: Token } = {
+  IF: {
+    type: TOKEN_TYPE.KEYWORD,
+    definition: "if"
+  },
+  VAR: {
+    type: TOKEN_TYPE.GRAMMAR,
+    definition: {
+      A: {
+        productions: { ...LETTERS.reduce((acc, letter) => ({ ...acc, [letter]: "B" }), {}) },
+        isFinal: false
+      },
+      B: {
+        productions: { ...[...LETTERS, ...NUMBERS].reduce((acc, letter) => ({ ...acc, [letter]: "B" }), {}) },
+        isFinal: true
+      }
+    }
+  }
+}
