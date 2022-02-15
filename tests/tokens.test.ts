@@ -1,6 +1,6 @@
 import { keywordToGrammar } from "../src/tokens";
 
-test("Check tokens", () => {
+test("keywordToGrammar", () => {
   expect(keywordToGrammar("if")).toEqual({
     0: {
       productions: {i: 1},
@@ -16,3 +16,4 @@ test("Check tokens", () => {
     }, 
   })
 })
+
