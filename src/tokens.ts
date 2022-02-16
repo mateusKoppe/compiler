@@ -20,13 +20,15 @@ export enum Tokens {
   ID,
 }
 
-export interface Grammar {
-  [state: string]: {
-    productions: {
-      [letter: string]: string;
-    };
-    isFinal: boolean;
+interface GrammarState {
+  productions: {
+    [char: string]: number[];
   };
+  isFinal: boolean;
+}
+
+export interface Grammar {
+  [state: number]: GrammarState;
 }
 
 enum TOKEN_TYPE {
@@ -104,7 +106,7 @@ export const keywordToGrammar = (keyword: string): Grammar => {
   ): reduceProp => [
     {
       ...state,
-      [index]: { productions: { [letter]: index + 1 }, isFinal: false },
+      [index]: { productions: { [letter]: [index + 1] }, isFinal: false },
     },
     index + 1,
   ];
@@ -143,16 +145,16 @@ export const TOKENS: TokenDict = {
   [Tokens.IF]: keywordToGrammar("if"),
   [Tokens.WHILE]: keywordToGrammar("while"),
   [Tokens.ID]: {
-    A: {
+    0: {
       productions: {
-        ...LETTERS.reduce((acc, letter) => ({ ...acc, [letter]: "B" }), {}),
+        ...LETTERS.reduce((acc, letter) => ({ ...acc, [letter]: [1] }), {}),
       },
       isFinal: false,
     },
-    B: {
+    1: {
       productions: {
         ...[...LETTERS, ...NUMBERS].reduce(
-          (acc, letter) => ({ ...acc, [letter]: "B" }),
+          (acc, letter) => ({ ...acc, [letter]: [1] }),
           {}
         ),
       },
@@ -163,6 +165,83 @@ export const TOKENS: TokenDict = {
   ...OPERATORS,
 };
 
+export const mergeStates = (...states: GrammarState[]): GrammarState => {
+  const letters = states.map((s) => Object.keys(s.productions)).flat();
+
+  return {
+    isFinal: states.some((a) => a.isFinal),
+    productions: letters.reduce(
+      (acc, index) => ({
+        ...acc,
+        [index]: [
+          ...new Set(
+            states
+              .map((s) => s.productions[index])
+              .filter((s) => s)
+              .flat()
+          ),
+        ],
+      }),
+      {}
+    ),
+  };
+};
+
+export const fixGrammarConflic = (
+  grammar: Grammar,
+  usedStates: number[]
+): Grammar => {
+  const nextAvaiableState = (usedStates: number[] = [], state = 0): number =>
+    usedStates.includes(state)
+      ? nextAvaiableState(usedStates, state + 1)
+      : state;
+
+  const stateRemapReducer = (
+    [acc, usedStates]: [{ [state: number]: number }, number[]],
+    state: number
+  ): [{ [state: number]: number }, number[]] => {
+    const transitionState = usedStates.includes(state)
+      ? nextAvaiableState(usedStates)
+      : state;
+    return [
+      {
+        ...acc,
+        [state]: transitionState,
+      },
+      [...usedStates, transitionState],
+    ];
+  };
+
+  const [remapedStates] = Object.keys(grammar)
+    .map(Number)
+    .reduce(stateRemapReducer, [{}, usedStates]);
+
+  const remapState = (state: number) => remapedStates[state] ?? state;
+
+  return Object.entries(grammar)
+    .map(([key, value]) => [+key, value])
+    .reduce(
+      (acc: Grammar, [key, grammarState]) => ({
+        ...acc,
+        [remapState(key)]: {
+          ...grammarState,
+          productions: Object.fromEntries(
+            Object.entries(grammarState.productions).map(([key, states]) => [
+              key,
+              (states as []).map(remapState),
+            ])
+          ),
+        },
+      }),
+      {} as Grammar
+    );
+};
+
 // export const mergeGrammar = (grammarA: Grammar, grammarB: Grammar): Grammar => {
-//   return grammarA;
+//   const { 0: startA, ...statesA } = grammarA;
+//   const { 0: startB, ...statesB } = grammarB;
+
+//   const usedStates = Object.keys(grammarA);
+
+//   return grammarA || grammarB;
 // };
