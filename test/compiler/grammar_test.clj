@@ -18,8 +18,16 @@
   (testing "Keywork->grammar with if keywork"
     (is (= (keywork->grammar :if) if-grammar))))
 
-(deftest merge-grammar
-  (testing "Mergeging if grammar and end grammar"
+(deftest updated-used-states-test
+  (testing "updated-used-states-test"
+    (is (= (updated-used-states if-grammar [0 1 2 3])
+           {:start-state 0
+            :states {0 {:productions {"i" [4]}}
+                     4 {:productions {"f" [5]}}
+                     5 {:productions {}, :final-token :if}}}))))
+
+(deftest merge-grammar-test
+  (testing "merge-grammar-test 'if' grammar and 'end' grammar"
     (is (= (merge-grammar if-grammar end-grammar)
            {:start-state 0
             :states {0 {:productions {"i" [1] "e" [3]}}
