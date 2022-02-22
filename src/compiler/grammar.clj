@@ -7,7 +7,7 @@
                     {:productions {}
                      :final-token token}}
         map->state (fn [i non-terminal]
-                     {i {:productions {(str non-terminal) [(inc i)]}}})]
+                     {i {:productions {(str non-terminal) #{(inc i)}}}})]
     {:start-state 0
      :states (merge (apply
                      merge
@@ -24,10 +24,9 @@
   (let [remap-productions (fn [productions]
                             (zipmap
                              (keys productions)
-                             (vec
-                              (map (fn [nexts]
-                                     (vec (map #(get replace-map %) nexts)))
-                                   (vals productions)))))]
+                             (map (fn [nexts]
+                                    (set (map #(get replace-map %) nexts)))
+                                  (vals productions))))]
     (zipmap
      (keys states)
      (map (fn [rules]
@@ -40,6 +39,7 @@
                            used-states used-states
                            replace-map {}
                            last-index 0]
+                      (println used-states)
                       (let [state (first states)
                             states (rest states)]
                         (if state
@@ -58,15 +58,16 @@
 
 (defn merge-start-grammar [grammarA grammarB]
   (merge-with (fn [startA startB]
-                (merge-with (fn [nextsA nextsB] (vec (set (concat nextsA nextsB)))) startA startB))
+                (merge-with (fn [nextsA nextsB] (set (concat nextsA nextsB))) startA startB))
               (get (:states grammarA) (:start-state grammarA))
               (get (:states grammarB) (:start-state grammarB))))
 
 (defn merge-grammar [grammarA grammarB]
-  (let [used-states (keys (:states grammarA))]
+  (let [used-states (set (keys (:states grammarA)))]
     {:start-state 0
      :states (merge
-     {0 (merge-start-grammar grammarA (updated-used-states grammarB used-states))}
-     (dissoc (:states grammarA) (:start-state grammarA))
-     (dissoc (:states (updated-used-states grammarB used-states)) (:start-state grammarB)))}
-    ))
+              {0 (merge-start-grammar grammarA (updated-used-states grammarB used-states))}
+              (dissoc (:states grammarA) (:start-state grammarA))
+              (dissoc (:states (updated-used-states grammarB used-states)) (:start-state grammarB)))}))
+
+;; (defn nfa->dfa [grammar])
