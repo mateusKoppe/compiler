@@ -68,8 +68,10 @@
               (dissoc (:states (updated-used-states grammarB used-states)) (:start-state grammarB)))}))
 
 (defn get-or-create-state [coll item]
-  (let [index (first (keep-indexed #(when (= item %2) %1) coll))]
-    (if index [coll index] (get-or-create-state (conj coll item) item))))
+  (if (empty? item)
+    [coll]
+    (let [index (first (keep-indexed #(when (= item %2) %1) coll))]
+      (if index [coll index] (get-or-create-state (conj coll item) item)))))
 
 
 (defn last-state? [coll index]
@@ -79,7 +81,9 @@
   (assoc
    dfa-gramar
    state-to-run
-   (merge state-config {:productions (assoc (get-in dfa-gramar [state-to-run :productions]) non-terminal new-next-state)})))
+   (if non-terminal 
+     (merge state-config {:productions (assoc (get-in dfa-gramar [state-to-run :productions]) non-terminal new-next-state)})
+     state-config)))
 
 (defn dfa-discover-state [dfa-gramar state-remap state-config state-to-run]
   (loop [productions (:productions state-config)
@@ -96,7 +100,7 @@
 (defn nfa->dfa
   ([grammar]
    (first (let [initial-state (:start-state grammar)]
-     (nfa->dfa (:states grammar) {} [#{initial-state}] 0 #{initial-state}))))
+     (nfa->dfa (:states grammar) (sorted-map) [#{initial-state}] 0 #{initial-state}))))
   ([nfa-grammar dfa-gramar state-remap state-to-run]
    (nfa->dfa nfa-grammar dfa-gramar state-remap state-to-run (get state-remap state-to-run)))
   ([nfa-grammar dfa-gramar state-remap state-to-run states-to-discover]
@@ -115,32 +119,3 @@
      (if (last-state? state-remap state-to-run)
        [dfa-gramar state-remap]
        (nfa->dfa nfa-grammar dfa-gramar state-remap (inc state-to-run))))))
-
-(nfa->dfa grammar)
-
-(def grammar {:start-state 0
-              :states {0 {:productions {"w" #{1 5} "a" #{2 3}}}
-                       1 {:productions {"i" #{2} "w" #{2 3}}}
-                       2 {:productions {"t" #{3}}}
-                       3 {:productions {"h" #{4}}}
-                       4 {:productions {}
-                        :final-token :with}
-                       5 {:productions {"h" #{6}}}
-                       6 {:productions {"e" #{7}}}
-                       7 {:productions {"n" #{8}}}
-                       8 {:productions {}, :final-token :when}}})
-
-
-(def a
-  {0 {:productions {"w" 1, "a" 2}}
-   7 {:productions {"n" 9}}
-   1 {:productions {"i" 3, "w" 2, "h" 4}}
-   4 {:productions {"e" 7}}
-   6 {:productions {"h" 5}}
-   3 {:productions {"t" 6}}
-   2 {:productions {"h" 5, "t" 6}}
-   9 {:productions {nil 8}, :final-token :when}
-   5 {:productions {nil 8}, :final-token :with}
-   8 {:productions {nil 8}}})
-
-
