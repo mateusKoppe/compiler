@@ -65,31 +65,23 @@
                      7 {:productions {"n" #{8}}}
                      8 {:productions {}, :final-token :when}}}))))
 
-;;; Notes to NFA->DFA
-;; {:start-state 0
-;;  :states {0 {:productions {"w" [1 5]}}
-;;           1 {:productions {"i" [2]}}
-;;           2 {:productions {"t" [3]}}
-;;           3 {:productions {"h" [4]}}
-;;           4 {:productions {}, :final-token :with}
-;;           5 {:productions {"h" [6]}}
-;;           6 {:productions {"e" [7]}}
-;;           7 {:productions {"n" [8]}}
-;;           8 {:productions {}, :final-token :when}}}
-
-;; {#{1 5} 1
-;;  #{2} 2
-;;  #{6} 3
-;;  #{3} 4
-;;  #{7} 5
-;;  #{4} 6
-;;  #{8} 7}
-
-;; {0 {:productions {"w" 1}}
-;;  1 {:productions {"i" 2 "h" 3}}
-;;  2 {:productions {"t" 4}}
-;;  3 {:productions {"e" 5}}
-;;  4 {:productions {"h" 6}}
-;;  5 {:productions {"n" 7}}
-;;  6 {:productions {}, :final-token :with}
-;;  7 {:productions {}, :final-token :when}}
+(deftest nfa->dfa-test
+  (testing "nfa->dfa"
+    (is (= (nfa->dfa {:start-state 0
+                      :states {0 {:productions {"w" #{1 5}}}
+                               1 {:productions {"i" #{2}}}
+                               2 {:productions {"t" #{3}}}
+                               3 {:productions {"h" #{4}}}
+                               4 {:productions {}, :final-token :with}
+                               5 {:productions {"h" #{6}}}
+                               6 {:productions {"e" #{7}}}
+                               7 {:productions {"n" #{8}}}
+                               8 {:productions {}, :final-token :when}}})
+           {0 {:productions {"w" 1}}
+            1 {:productions {"i" 2 "h" 3}}
+            2 {:productions {"t" 4}}
+            3 {:productions {"e" 5}}
+            4 {:productions {"h" 6}}
+            5 {:productions {"n" 7}}
+            6 {:productions {}, :final-token :with}
+            7 {:productions {}, :final-token :when}}))))
