@@ -73,49 +73,41 @@
     (let [index (first (keep-indexed #(when (= item %2) %1) coll))]
       (if index [coll index] (get-or-create-state (conj coll item) item)))))
 
+(defn dfa-merge-states [nfa-grammar states]
+  (reduce
+   (fn [acc state]
+     (merge acc
+            state
+            {:productions
+             (apply merge-with (conj (map :productions [acc state]) into))}))
+   (map #(get nfa-grammar %) states)))
 
-(defn last-state? [coll index]
-  (>= (inc index) (count coll)))
+(defn nfa-determine-dfa
+  ([grammar] (nfa-determine-dfa (:states grammar) {} #{(:start-state grammar)}))
+  ([nfa-grammar dfa-grammar state-to-discover]
+   (if (contains? dfa-grammar state-to-discover)
+     dfa-grammar
+     (let [new-state (dfa-merge-states nfa-grammar state-to-discover)
+           dfa-grammar (into dfa-grammar {state-to-discover new-state})]
+       (reduce (fn [dfa-grammar state]
+                 (nfa-determine-dfa nfa-grammar dfa-grammar state))
+               dfa-grammar
+               (-> new-state :productions vals))))))
 
-(defn dfa-add-state [dfa-gramar state-to-run state-config non-terminal new-next-state]
-  (assoc
-   dfa-gramar
-   state-to-run
-   (if non-terminal 
-     (merge state-config {:productions (assoc (get-in dfa-gramar [state-to-run :productions]) non-terminal new-next-state)})
-     state-config)))
+(defn dfa-fix-sets-states 
+  ([dfa-grammar] 
+   (let [[dfa-gramar used-states] (dfa-fix-sets-states dfa-grammar [#{0}] #{0})
+         remap-state (reduce-kv #(into %1 {%3 %2}) {} used-states)]
+     (rename-keys dfa-gramar remap-state)))
+  ([dfa-grammar used-states state-discover]
+   (if (contains? dfa-grammar state-discover)
+     (reduce (fn [[dfa-grammar used-states] [non-terminal state]] 
+               (let [[used-states new-state] (get-or-create-state used-states state)
+                     dfa-grammar (assoc-in dfa-grammar [state-discover :productions non-terminal] new-state)]
+                 (dfa-fix-sets-states dfa-grammar used-states state)))
+             [dfa-grammar used-states]
+             (-> dfa-grammar (get state-discover) :productions))
+     [dfa-grammar used-states])))
 
-(defn dfa-discover-state [dfa-gramar state-remap state-config state-to-run]
-  (loop [productions (:productions state-config)
-         dfa-gramar dfa-gramar
-         state-remap state-remap]
-    (let [[[non-terminal nfa-state] & productions] productions
-          [state-remap new-next-state] (get-or-create-state state-remap nfa-state)
-          dfa-gramar (dfa-add-state dfa-gramar state-to-run state-config non-terminal new-next-state)]
-
-      (if (empty? productions)
-        [dfa-gramar state-remap]
-        (recur productions dfa-gramar state-remap)))))
-
-(defn nfa->dfa
-  ([grammar]
-   (first (let [initial-state (:start-state grammar)]
-     (nfa->dfa (:states grammar) (sorted-map) [#{initial-state}] 0 #{initial-state}))))
-  ([nfa-grammar dfa-gramar state-remap state-to-run]
-   (nfa->dfa nfa-grammar dfa-gramar state-remap state-to-run (get state-remap state-to-run)))
-  ([nfa-grammar dfa-gramar state-remap state-to-run states-to-discover]
-  ;; Run all productions and recurse it
-   (let
-    [[dfa-gramar state-remap]
-     (let [[state-to-discover & states-to-discover] states-to-discover
-           [dfa-gramar state-remap] (dfa-discover-state
-                                     dfa-gramar
-                                     state-remap
-                                     (get nfa-grammar state-to-discover)
-                                     state-to-run)]
-       (if (empty? states-to-discover)
-         [dfa-gramar state-remap]
-         (nfa->dfa nfa-grammar dfa-gramar state-remap state-to-run states-to-discover)))]
-     (if (last-state? state-remap state-to-run)
-       [dfa-gramar state-remap]
-       (nfa->dfa nfa-grammar dfa-gramar state-remap (inc state-to-run))))))
+(defn nfa->dfa [grammar]
+  (-> grammar nfa-determine-dfa dfa-fix-sets-states))

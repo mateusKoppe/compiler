@@ -28,6 +28,17 @@
                             3 {:productions {"n" #{4}}}
                             4 {:productions {}, :final-token :when}}})
 
+(def why-when-grammar {:start-state 0,
+                       :states
+                       {0 {:productions {"w" #{1 4}}},
+                        1 {:productions {"h" #{2}}},
+                        2 {:productions {"y" #{3}}},
+                        3 {:productions {}, :final-token :why}
+                        4 {:productions {"h" #{5}}},
+                        5 {:productions {"e" #{6}}},
+                        6 {:productions {"n" #{7}}},
+                        7 {:productions {}, :final-token :when}}})
+
 (deftest keywork->grammar-test
   (testing "Keywork->grammar with if keywork"
     (is (= (keywork->grammar :if) if-grammar))))
@@ -78,10 +89,52 @@
                                7 {:productions {"n" #{8}}}
                                8 {:productions {}, :final-token :when}}})
            {0 {:productions {"w" 1}}
-            1 {:productions {"i" 2 "h" 3}}
-            2 {:productions {"t" 4}}
-            3 {:productions {"e" 5}}
-            4 {:productions {"h" 6}}
-            5 {:productions {"n" 7}}
-            6 {:productions {}, :final-token :with}
+            1 {:productions {"i" 2, "h" 5}}
+            2 {:productions {"t" 3}}
+            3 {:productions {"h" 4}}
+            4 {:productions {}, :final-token :with}
+            5 {:productions {"e" 6}}
+            6 {:productions {"n" 7}}
             7 {:productions {}, :final-token :when}}))))
+
+(deftest dfa-merge-states-test
+  (testing "dfa-merge-states with same non-terminal"
+    (is (= (dfa-merge-states (:states why-when-grammar) #{1 4})
+           {:productions {"h" #{2 5}}})))
+  
+  (testing "dfa-merge-states with multiple non-terminal"
+    (is (= (dfa-merge-states (:states why-when-grammar) #{2 5})
+           {:productions {"y" #{3} "e" #{6}}})))
+  
+  (testing "dfa-merge-states with single state"
+    (is (= (dfa-merge-states (:states why-when-grammar) #{0})
+           {:productions {"w" #{1 4}}})))
+  
+  (testing "dfa-merge-states with :final-token"
+    (is (= (dfa-merge-states (:states why-when-grammar) #{3 7})
+           {:productions {}, :final-token :why}))))
+
+(deftest nfa-determine-dfa-test
+  (testing "nfa-determine-dfa"
+    (is (= (nfa-determine-dfa why-when-grammar)
+           {#{0} {:productions {"w" #{1 4}}}
+            #{1 4} {:productions {"h" #{2 5}}}
+            #{2 5} {:productions {"y" #{3} "e" #{6}}}
+            #{3} {:productions {}, :final-token :why}
+            #{6} {:productions {"n" #{7}}}
+            #{7} {:productions {}, :final-token :when}}))))
+
+(deftest dfa-fix-sets-states-test
+  (testing "dfa-fix-sets-states"
+    (is (= (dfa-fix-sets-states {#{0} {:productions {"w" #{1 4}}}
+                              #{1 4} {:productions {"h" #{2 5}}}
+                              #{2 5} {:productions {"y" #{3} "e" #{6}}}
+                              #{3} {:productions {}, :final-token :why}
+                              #{6} {:productions {"n" #{7}}}
+                              #{7} {:productions {}, :final-token :when}})
+           {0 {:productions {"w" 1}}
+            1 {:productions {"h" 2}}
+            2 {:productions {"y" 3 "e" 4}}
+            3 {:productions {}, :final-token :why}
+            4 {:productions {"n" 5}}
+            5 {:productions {}, :final-token :when}}))))
