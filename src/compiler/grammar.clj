@@ -1,19 +1,21 @@
 (ns compiler.grammar
   (:require [clojure.set :refer [rename-keys]]))
 
-(defn keywork->grammar [token]
-  (let [string (name token)
-        last-state {(count string)
-                    {:productions {}
-                     :final-token token}}
-        map->state (fn [i non-terminal]
-                     {i {:productions {(str non-terminal) #{(inc i)}}}})]
-    {:start-state 0
-     :states (merge (apply
-                     merge
-                     (map-indexed map->state
-                                  string))
-                    last-state)}))
+(defn keywork->grammar
+  ([keyword] (keywork->grammar keyword keyword))
+  ([keyword token]
+   (let [string (name keyword)
+         last-state {(count string)
+                     {:productions {}
+                      :final-token token}}
+         map->state (fn [i non-terminal]
+                      {i {:productions {(str non-terminal) #{(inc i)}}}})]
+     {:start-state 0
+      :states (merge (apply
+                      merge
+                      (map-indexed map->state
+                                   string))
+                     last-state)})))
 
 (defn find-available-index [list last-index]
   (if (some #(= % last-index) list)
@@ -98,7 +100,7 @@
   ([dfa-grammar]
    (let [[dfa-gramar used-states] (dfa-fix-sets-states dfa-grammar [#{0}] #{0})
          remap-state (reduce-kv #(into %1 {%3 %2}) {} used-states)]
-     (rename-keys dfa-gramar remap-state)))
+     (into (sorted-map) (rename-keys dfa-gramar remap-state))))
   ([dfa-grammar used-states state-discover]
    (reduce (fn [[dfa-grammar used-states] [non-terminal state]]
              (let [state-processed? (some #(= state %) used-states)
