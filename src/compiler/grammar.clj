@@ -94,20 +94,21 @@
                dfa-grammar
                (-> new-state :productions vals))))))
 
-(defn dfa-fix-sets-states 
-  ([dfa-grammar] 
+(defn dfa-fix-sets-states
+  ([dfa-grammar]
    (let [[dfa-gramar used-states] (dfa-fix-sets-states dfa-grammar [#{0}] #{0})
          remap-state (reduce-kv #(into %1 {%3 %2}) {} used-states)]
      (rename-keys dfa-gramar remap-state)))
   ([dfa-grammar used-states state-discover]
-   (if (contains? dfa-grammar state-discover)
-     (reduce (fn [[dfa-grammar used-states] [non-terminal state]] 
-               (let [[used-states new-state] (get-or-create-state used-states state)
-                     dfa-grammar (assoc-in dfa-grammar [state-discover :productions non-terminal] new-state)]
-                 (dfa-fix-sets-states dfa-grammar used-states state)))
-             [dfa-grammar used-states]
-             (-> dfa-grammar (get state-discover) :productions))
-     [dfa-grammar used-states])))
+   (reduce (fn [[dfa-grammar used-states] [non-terminal state]]
+             (let [state-processed? (some #(= state %) used-states)
+                   [used-states new-state] (get-or-create-state used-states state)
+                   dfa-grammar (assoc-in dfa-grammar [state-discover :productions non-terminal] new-state)]
+               (if-not state-processed?
+                 (dfa-fix-sets-states dfa-grammar used-states state)
+                 [dfa-grammar used-states])))
+           [dfa-grammar used-states]
+           (-> dfa-grammar (get state-discover) :productions))))
 
 (defn nfa->dfa [grammar]
   (-> grammar nfa-determine-dfa dfa-fix-sets-states))

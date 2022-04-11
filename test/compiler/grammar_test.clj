@@ -137,4 +137,18 @@
             2 {:productions {"y" 3 "e" 4}}
             3 {:productions {}, :final-token :why}
             4 {:productions {"n" 5}}
+            5 {:productions {}, :final-token :when}})))
+  
+  (testing "dfa-fix-sets-states with multiple non-terminal to same state"
+    (is (= (dfa-fix-sets-states {#{0} {:productions {"w" #{1 4} "a" #{1 4} "b" #{1 4}}}
+                                 #{1 4} {:productions {"h" #{2 5} "a" #{2 5}}}
+                                 #{2 5} {:productions {"y" #{3} "e" #{6}}}
+                                 #{3} {:productions {}, :final-token :why}
+                                 #{6} {:productions {"n" #{7}}}
+                                 #{7} {:productions {}, :final-token :when}})
+           {0 {:productions {"w" 1 "a" 1 "b" 1}}
+            1 {:productions {"h" 2 "a" 2}}
+            2 {:productions {"y" 3 "e" 4}}
+            3 {:productions {}, :final-token :why}
+            4 {:productions {"n" 5}}
             5 {:productions {}, :final-token :when}}))))
