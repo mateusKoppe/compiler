@@ -23,5 +23,5 @@
    ])
 
 (def nfa-grammar (reduce #(merge-grammar %1 %2) tokens))
-(def dfa-grammar nfa-grammar)
+(def dfa-grammar (nfa->dfa nfa-grammar))
 
