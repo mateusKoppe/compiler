@@ -3,7 +3,7 @@
 
 (defn keywork->grammar
   ([keyword] (keywork->grammar keyword keyword))
-  ([keyword token]
+  ([token keyword]
    (let [string (name keyword)
          last-state {(count string)
                      {:productions {}
