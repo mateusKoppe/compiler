@@ -1,0 +1,36 @@
+"Name"     = 'Enter the name of the grammar'
+"Author"   = 'Enter your name'
+"Version"  = 'The version of the grammar and/or language'
+"About"    = 'A short description of the grammar'
+
+"Start Symbol" = <Program>
+
+! -------------------------------------------------
+! Character Sets
+! -------------------------------------------------
+
+
+! -------------------------------------------------
+! Terminals
+! -------------------------------------------------
+
+
+! -------------------------------------------------
+! Rules
+! -------------------------------------------------
+
+! The grammar starts below
+<Program> ::= <Statement>
+<Statement> ::= <Expression> | <Assign>
+
+<Assign> ::= let identifier assign <Value>
+             
+<Expression> ::= <If>
+
+<If> ::= if <Cond> then <Block>
+      
+<Block> ::= open_brackets <Statement> close_brackets
+      
+<Value> ::= number | <Bool>
+<Bool> ::= true | false
+<Cond> ::= <Bool> | <Value> equals <Value>

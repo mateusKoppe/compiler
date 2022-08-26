@@ -1,6 +1,9 @@
 (ns compiler.tokens
   (:require [clojure.string :as string]
-            [compiler.grammar :refer [keywork->grammar merge-grammar nfa->dfa]]))
+            [compiler.grammar :refer [keywork->grammar merge-grammar nfa->dfa]]
+            [compiler.struct-grammar-parser :refer [parse-grammar-file]]))
+
+(defonce GRAMMAR-CONFIG-FILE "grammar/pspslang.xml")
 
 (def lowercase-letters ["a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "o" "p" "q" "r" "s" "t" "u" "v" "x" "w" "y" "z"])
 (def uppercase-letters (vec (map string/upper-case lowercase-letters)))
@@ -62,6 +65,6 @@
           reserved-words))
 
 (def nfa-grammar (reduce #(merge-grammar %1 %2) tokens))
-(def dfa-grammar (nfa->dfa nfa-grammar))
 
-(clojure.pprint/pprint dfa-grammar)
+(def dfa-grammar (nfa->dfa nfa-grammar))
+(def lr-table (parse-grammar-file GRAMMAR-CONFIG-FILE))

@@ -8,6 +8,7 @@
 (defn get-final-token [grammar state]
   (get-in grammar [state :final-token]))
 
+;; TODO: Handle error, do not allow token to be nil
 (defn get-lexical-tokens [grammar input]
   (first
    (reduce (fn [[sequence acc state] non-terminal]
