@@ -56,7 +56,7 @@
   (let [get-symbol (partial get-symbol file-data)
         format-production
         (fn [tag]
-          {:rule (:name (get-symbol (get-attribute tag :NonTerminalIndex)))
+          {:rule (keyword (:name (get-symbol (get-attribute tag :NonTerminalIndex))))
            :productions (into
                          []
                          (map
