@@ -15,12 +15,16 @@
                  (let [next-state (get-next-state grammar state non-terminal)
                        final-token (get-final-token grammar state)
                        error? (nil? next-state)]
+                   
                    (if error?
-                     [(if (some #(= final-token %) IGNORE-TOKENS)
-                       sequence
-                       (conj sequence {:token final-token
-                                      :lexeme acc}))
-                      non-terminal (get-next-state grammar INITIAL-STATE non-terminal)]
+                     (do (when (nil? final-token)
+                            (throw (Exception. (str "Lexical error on: " acc))))
+                          [(if (some #(= final-token %) IGNORE-TOKENS)
+                             sequence
+                             (conj sequence {:token final-token
+                                             :lexeme acc}))
+                           non-terminal (get-next-state grammar INITIAL-STATE non-terminal)])
+
                      [sequence (str acc non-terminal) next-state])))
                [[] "" INITIAL-STATE]
           ;;  Adding \n to add the last separator on file

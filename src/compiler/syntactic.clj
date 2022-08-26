@@ -28,9 +28,8 @@
      :input (:input lr-analysis)}))
 
 (defn action-accept [_ {:keys [stack input]} _]
-  (print input)
   {:stack stack
-   :input  (pop input)
+   :input  []
    :status :accept})
 
 (defn next-state [lr-table {:keys [stack input] :as lr-analysis}]
@@ -42,21 +41,9 @@
         {:keys [state]} (peek stack)
         action (get-in lr-table [:action state (:token look-ahead)]) 
         handler (get action-map (:action action))]
+    (when (nil? handler)
+      (throw (Exception. (str "Syntatical error."))))
     (handler lr-table lr-analysis action)))
-
-(def input 
-  [{:token :if, :lexeme "if"}
-  {:token :number, :lexeme "2"}
-  {:token :equals, :lexeme "=="}
-  {:token :number, :lexeme "2"}
-  {:token :then, :lexeme "then"}
-  {:token :open_brackets, :lexeme "{"}
-  {:token :let, :lexeme "let"}
-  {:token :identifier, :lexeme "a"}
-  {:token :assign, :lexeme "="}
-  {:token :true, :lexeme "true"}
-  {:token :close_brackets, :lexeme "}"}
-   {:token :EOF :lexeme ""}])
 
 (defn run-lr-analysis [lr-table input]
   (loop [input input
