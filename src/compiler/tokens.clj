@@ -5,7 +5,7 @@
 
 (defonce GRAMMAR-CONFIG-FILE "grammar/pspslang.xml")
 
-(def lowercase-letters ["a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "o" "p" "q" "r" "s" "t" "u" "v" "x" "w" "y" "z"])
+(def lowercase-letters ["a" "b" "c"])
 (def uppercase-letters (vec (map string/upper-case lowercase-letters)))
 (def all-letters (vec (concat lowercase-letters uppercase-letters)))
 
@@ -27,10 +27,12 @@
 
 (def separators
   [(keywork->grammar :whitespace " ")
-   (keywork->grammar :breakline "\\n")
-   (keywork->grammar :tab "\\t")
+   (keywork->grammar :breakline "\n")
+   (keywork->grammar :tab "\t")
    (keywork->grammar :semicolon ";")
-   (keywork->grammar :comma ",")])
+   (keywork->grammar :comma ",")
+   (keywork->grammar :open_brackets "{")
+   (keywork->grammar :close_brackets "}")])
 
 (def operators
   [(keywork->grammar :plus "+")
@@ -55,14 +57,18 @@
 (def reserved-words
   [(keywork->grammar :def)
    (keywork->grammar :if)
-   (keywork->grammar :else)])
+   (keywork->grammar :else)
+   (keywork->grammar :then)
+   (keywork->grammar :let)])
 
 (def tokens
-  (concat [identifier-grammar numbers]
-          separators
-          operators
-          types
-          reserved-words))
+  (concat
+   [identifier-grammar numbers]
+   reserved-words 
+   separators
+   operators
+   types
+   reserved-words))
 
 (def nfa-grammar (reduce #(merge-grammar %1 %2) tokens))
 

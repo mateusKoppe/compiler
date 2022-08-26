@@ -1,6 +1,7 @@
 (ns compiler.lexical)
 
 (def INITIAL-STATE 0)
+(def IGNORE-TOKENS [:whitespace :breakline :tab])
 
 (defn get-next-state [grammar state non-terminal]
   (get-in grammar [state :productions non-terminal]))
@@ -15,12 +16,14 @@
                        final-token (get-final-token grammar state)
                        error? (nil? next-state)]
                    (if error?
-                     [(conj sequence {:token final-token
-                                      :lexeme acc})
+                     [(if (some #(= final-token %) IGNORE-TOKENS)
+                       sequence
+                       (conj sequence {:token final-token
+                                      :lexeme acc}))
                       non-terminal (get-next-state grammar INITIAL-STATE non-terminal)]
                      [sequence (str acc non-terminal) next-state])))
                [[] "" INITIAL-STATE]
           ;;  Adding \n to add the last separator on file
                (clojure.string/split (str input "\n") #""))
-       first
+       first 
        (conj {:token :EOF :lexeme ""})))
