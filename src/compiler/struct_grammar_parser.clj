@@ -49,8 +49,43 @@
         symbol-data (:attrs tag)
         type (get SYMBOL-TYPE-MAP (:Type symbol-data))
         name (:Name symbol-data)]
-    {:name name
+    {:name (keyword name)
      :type type}))
+
+(defn format-charset-table [file-data]
+  (let [table (get-in file-data [:content 4 :content])
+        tags->unicodes (fn [tags] (map #(->
+                                         (get-attribute % :UnicodeIndex)
+                                         Integer.
+                                         char
+                                         str) tags))
+        contents (map :content table)
+        values (map tags->unicodes contents)]
+    (format-to-map table values)))
+
+(defn format-dfa-state [file-data charset-table tag]
+  (let [accept-symbol (get-attribute tag :AcceptSymbol)
+        content (:content tag)
+        charsets (map
+                  (fn [tag]
+                    {:state (Integer. (get-attribute tag :Target))
+                     :charset (Integer. (get-attribute tag :CharSetIndex))}) content)
+        values (reduce
+                (fn [acc {:keys [state charset]}]
+                  (let [chars (get charset-table charset)]
+                    (merge acc (reduce #(merge %1 {%2 state}) {} chars))))
+                {}
+                charsets)]
+    {:symbol (get-symbol file-data accept-symbol)
+     :transitions values}))
+
+(defn format-dfa [file-data]
+  (let [table (get-in file-data [:content 5 :content])
+        charset-table (format-charset-table file-data)]
+    (format-to-map
+     table
+     (map #(format-dfa-state file-data charset-table %)
+          table))))
 
 (defn format-productions [file-data]
   (let [get-symbol (partial get-symbol file-data)
@@ -99,4 +134,5 @@
                       java.io.ByteArrayInputStream. xml/parse)]
     {:production (format-productions file-data)
      :action (format-action file-data)
-     :goto (format-goto file-data)}))
+     :goto (format-goto file-data)
+     :dfa (format-dfa file-data)}))

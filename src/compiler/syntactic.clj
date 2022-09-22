@@ -42,6 +42,8 @@
         action (get-in lr-table [:action state (:token look-ahead)]) 
         handler (get action-map (:action action))]
     (when (nil? handler)
+      (print stack)
+      (print input)
       (throw (Exception. (str "Syntatical error."))))
     (handler lr-table lr-analysis action)))
 

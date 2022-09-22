@@ -1,15 +1,13 @@
 (ns compiler.lexical)
 
 (def INITIAL-STATE 0)
-(def IGNORE-TOKENS [:whitespace :breakline :tab])
 
 (defn get-next-state [grammar state non-terminal]
-  (get-in grammar [state :productions non-terminal]))
+  (get-in grammar [state :transitions non-terminal]))
 
 (defn get-final-token [grammar state]
-  (get-in grammar [state :final-token]))
+  (get-in grammar [state :symbol]))
 
-;; TODO: Handle error, do not allow token to be nil
 (defn get-lexical-tokens [grammar input] 
    (-> (reduce (fn [[sequence acc state] non-terminal]
                  (let [next-state (get-next-state grammar state non-terminal)
@@ -18,10 +16,10 @@
                    
                    (if error?
                      (do (when (nil? final-token)
-                            (throw (Exception. (str "Lexical error on: " acc))))
-                          [(if (some #(= final-token %) IGNORE-TOKENS)
+                            (throw (Exception. (str "Lexical error on: " (str sequence acc non-terminal))))) 
+                          [(if (= :whitespace (:type final-token))
                              sequence
-                             (conj sequence {:token final-token
+                             (conj sequence {:token (:name final-token)
                                              :lexeme acc}))
                            non-terminal (get-next-state grammar INITIAL-STATE non-terminal)])
 
